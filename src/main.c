@@ -194,11 +194,11 @@ stobin(
 {
 	uint8_t *a;
 	size_t a_len;
-	int mask[] = { 0x1, 0x2, 0x4, 0x8,
-					0x10, 0x20, 0x40, 0x80 };
+	static const int mask[] = { 0x1, 0x2, 0x4, 0x8,
+							0x10, 0x20, 0x40, 0x80 };
 	a_len = stobin_size(s);
 	a = (uint8_t *)malloc(a_len * sizeof(uint8_t));
-	memset(a, 0, (a_len));
+	memset(a, 0, a_len);
 	for(size_t i=0,j=0,len=strlen(s); i<len; ++i) {
 		//for each character to be encoded
 		for(int k=7; k>=0; --k,++j) {
@@ -238,18 +238,17 @@ encode_line(
 	//the 45->60 chars and the length newline and null
 	char *enc = (char *)malloc(63*sizeof(char));
 	
-	//first encode the number of characters
-	(void)sprintf(enc, "%c", (int)(strlen(line)+32));
+	//encode the number of characters
+	sprintf(enc, "%c", (int)(strlen(line)+32));
 
 	//convert the string of chars into an array of bits
 	bin = stobin(line);//must be freed
-	for(size_t i=0,len=stobin_size(line); i<len; i+=6)//check the <=
+	for(size_t i=0,len=stobin_size(line); i<len; i+=6)
 	{
-		(void)sprintf(enc, "%s%c", enc, bitstoc(&bin[i]) + 32);
+		sprintf(enc, "%s%c", enc, bitstoc(&bin[i]) + 32);
 	}
-	(void)sprintf(enc, "%s\n", enc);
+	sprintf(enc, "%s\n", enc);
 	free(bin);
-	free(line);//experimental
 	return (void *)enc;
 }
 
@@ -330,7 +329,7 @@ writeenc(
 	void *enc = NULL;
 	pthread_join(el->thread, &enc);
 	if (enc)
-		(void)fprintf(fd, "%s", (char *)enc);
+		fprintf(fd, "%s", (char *)enc);
 	free(enc);
 	if (el->cdr)
 		writeenc(el->cdr, fd);
@@ -364,10 +363,12 @@ encode(
 	FILE * f_write;
 	char *line = NULL;
 
-	if (ifile == NULL)
+	if (ifile == NULL) {
+		ifile = "stdin";
 		f_read = stdin;
-	else
+	} else {
 		f_read = fopen(ifile, "r");
+	}
 
 	if (ofile == NULL)
 		f_write = stdout;
@@ -379,7 +380,7 @@ encode(
 	if (!f_write)
 		errx(EBADOUT, "%s\n", "could not open output_file");
 
-	header(f_write, DEFAULT_PERM, ifile);
+	header(f_write, DEFAULT_PERM, ifile); 
 
 	enclist_t *el = (enclist_t *)malloc(enclist_sz);
 	el->cdr = NULL;
@@ -387,7 +388,7 @@ encode(
 	{
 		pthread_create(newthread(el), NULL, &encode_line, (void *)line);
 
-		line = NULL;
+		free(line);
 	}
 	writeenc(el, f_write);
 	el = freeenc(el);
