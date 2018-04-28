@@ -1,8 +1,6 @@
 //main.c
-
 //created by: Kurt L. Manion
 //on: 16 Aug 2016
-//
 //problem from: «https://www.reddit.com/r/dailyprogrammer/comments/4xy6i1/20160816_challenge_279_easy_uuencoding/»
 //
 //uuencoding/uudecoding
@@ -106,50 +104,51 @@ main(
 			break;;
 
 		case 'h':
-			usage(basename);
+			usage(basename);;
+
 		case '?':
 			if (isprint(optopt))
 				warnx("unknown option flag `%c'", (char)optopt);
 		 	else
-				warnx("unknown option code `%#x'", (unsigned)optopt);
-			usage(basename);
+				warnx("unknown option code `%#x'", optopt);
+			usage(basename);;
+
 		case ':':
-			warnx("option flag `%c' requires an argument", optopt);
-			usage(basename);
+			warnx("option flag `%c' requires an argument", (char)optopt);
+			usage(basename);;
+
 		default:
-			abort();
+			abort();;
 		}
 	}
-	if ((e_flg == 1 && d_flg == 1) || (e_flg == 0 && d_flg == 0)) {
-		warnx("%s", "you must specify the e or d option");
+	if (!(e_flg ^ d_flg)) {
+		warnx("%s", "you must specify the e or d mode");
 		usage(basename);
 	}
 	if (e_flg) //-e -f file -o file
 	{
-		if (output_file == NULL && c_flg != 1) {
-			warnx("%s\n", "no output file has been specified");
-			usage(basename);
+		if (!output_file) { //then stdout will recieve the output
+			c_flg = 0
 		}
-		if (input_file == NULL) {
-			warnx("%s", "no input file has been specified");
+		if (!input_file && feof(stdin)) {
+			warnx("%s", "no input has been provided");
 			usage(basename);
 		}
 		r = encode(input_file, output_file);
-		if (c_flg) {
+		if (c_flg)
 			cat(output_file);
-		}
 		return r;
 	}		
 	else if (d_flg) //-d -f file
 	{
-		if (input_file == NULL) {
+		if (!input_file) {
 			warnx("%s", "no input file has been specified");
 			usage(basename);
 		}
 		r = decode(input_file);
 		return r;
 	}
-	return(EXIT_FAILURE);
+	return EXIT_FAILURE;
 }
 
 
@@ -160,31 +159,31 @@ header(
 	FILE * fd, 				//output file written to in encode funct
 	const char *perm, 		//octal UNIX permissions, usualy 644
 	const char *filename) 	//filename to be written to
-	{
-		fprintf(fd, "begin %s %s\n", perm, filename);
-		return;
-	}
+{
+	fprintf(fd, "begin %s %s\n", perm, filename);
+	return;
+}
 
 void
 footer(
 	FILE *fd)
-	{
-		fprintf(fd, "`\nend\n");
-	}
+{
+	fprintf(fd, "`\nend\n");
+}
 
 /* calculates how many bits the array resulting from stobin will have
  * makeing sure that it has padding bits to make it a multiple of 6 */
 size_t
 stobin_size(
 	const char *s)
-	{
-		size_t l;
-		l = (strlen(s))*8;
-		//add padding bits
-		if (l%6 != 0)
-			l += 6 - (l%6);
-		return l;
-	}
+{
+	size_t l;
+	l = (strlen(s))*8;
+	//add padding bits
+	if (l%6 != 0)
+		l += 6 - (l%6);
+	return l;
+}
 
 /* converts an array of chars to an array of 1s and 0s
  * skips the ending newline
@@ -192,37 +191,37 @@ stobin_size(
 uint8_t*
 stobin(
 	const char *s)
-	{
-		uint8_t *a;
-		size_t a_len;
-		int mask[] = { 0x1, 0x2, 0x4, 0x8,
-						0x10, 0x20, 0x40, 0x80 };
-		a_len = stobin_size(s);
-		a = (uint8_t *)malloc(a_len * sizeof(uint8_t));
-		memset(a, 0, (a_len));
-		for(size_t i=0,j=0,len=strlen(s); i<len; ++i) {
-			//for each character to be encoded
-			for(int k=7; k>=0; --k,++j) {
-				//for each bit in that character
-				a[j] = (s[i] & mask[k]) >> k;
-			}
+{
+	uint8_t *a;
+	size_t a_len;
+	int mask[] = { 0x1, 0x2, 0x4, 0x8,
+					0x10, 0x20, 0x40, 0x80 };
+	a_len = stobin_size(s);
+	a = (uint8_t *)malloc(a_len * sizeof(uint8_t));
+	memset(a, 0, (a_len));
+	for(size_t i=0,j=0,len=strlen(s); i<len; ++i) {
+		//for each character to be encoded
+		for(int k=7; k>=0; --k,++j) {
+			//for each bit in that character
+			a[j] = (s[i] & mask[k]) >> k;
 		}
-		return a;
 	}
+	return a;
+}
 
 /* takes first 6 elements from uint8_t array and considering them as bits
  * converts them to their integer equivalent */
  uint8_t
  bitstoc(
  	uint8_t *a)
+{
+	uint8_t acc=0;
+	for(int i=0; i<6; ++i)
 	{
-		uint8_t acc=0;
-		for(int i=0; i<6; ++i)
-		{
-			acc += a[i] << ((6-1)-i);
-		}
-		return acc;
+		acc += a[i] << ((6-1)-i);
 	}
+	return acc;
+}
 
 /* power-house function that actualy converts text to binary 
  * this is now the thread function
@@ -232,27 +231,27 @@ stobin(
 void*
 encode_line(
 	void *arg)
-	{
-		char *line = (char *)arg;
-		kprintf("encoding line: %s\n", line);
-		uint8_t *bin;
-		//the 45->60 chars and the length newline and null
-		char *enc = (char *)malloc(63*sizeof(char));
-		
-		//first encode the number of characters
-		(void)sprintf(enc, "%c", (int)(strlen(line)+32));
+{
+	char *line = (char *)arg;
+	kprintf("encoding line: %s\n", line);
+	uint8_t *bin;
+	//the 45->60 chars and the length newline and null
+	char *enc = (char *)malloc(63*sizeof(char));
+	
+	//first encode the number of characters
+	(void)sprintf(enc, "%c", (int)(strlen(line)+32));
 
-		//convert the string of chars into an array of bits
-		bin = stobin(line);//must be freed
-		for(size_t i=0,len=stobin_size(line); i<len; i+=6)//check the <=
-		{
-			(void)sprintf(enc, "%s%c", enc, bitstoc(&bin[i]) + 32);
-		}
-		(void)sprintf(enc, "%s\n", enc);
-		free(bin);
-		free(line);//experimental
-		return (void *)enc;
+	//convert the string of chars into an array of bits
+	bin = stobin(line);//must be freed
+	for(size_t i=0,len=stobin_size(line); i<len; i+=6)//check the <=
+	{
+		(void)sprintf(enc, "%s%c", enc, bitstoc(&bin[i]) + 32);
 	}
+	(void)sprintf(enc, "%s\n", enc);
+	free(bin);
+	free(line);//experimental
+	return (void *)enc;
+}
 
 
 /*
@@ -266,86 +265,86 @@ int
 readline(
 	char **line,
 	FILE *fd)
-	{
-		char *x;
-		*line = (char *)malloc(47*sizeof(char));
-		(void)fgets(*line, 46, fd);
-		//strip newline
-		x = strchr(*line, '\n');
-		if (x != NULL)
-			*x = '\0';
-		if (feof(fd)) {
-			return EOF;
-		} else {
-			return 0;
-		}
+{
+	char *x;
+	*line = (char *)malloc(47*sizeof(char));
+	(void)fgets(*line, 46, fd);
+	//strip newline
+	x = strchr(*line, '\n');
+	if (x != NULL)
+		*x = '\0';
+	if (feof(fd)) {
+		return EOF;
+	} else {
+		return 0;
 	}
+}
 
 /*
  * linked-list structure to dynamically hold encoded lines
  */
 typedef
-struct _enclist_t {
+struct _enclist {
 	pthread_t thread;
-	struct _enclist_t *cdr;
-} Enclist;
-#define Enclist_sz (sizeof(Enclist))
+	struct _enclist *cdr;
+} enclist_t;
+#define enclist_sz (sizeof(enclist_t))
 
 /* debugging purposes only */
-int
+int __attribute__((unused))
 enclist_length(
-	Enclist *el)
-	{
-		if (el && el->cdr) {
-			return 1 + enclist_length(el->cdr);
-		} else if (el) {
-			return 1;
-		} else {
-			return 0;
-		}
+	enclist_t *el)
+{
+	if (el && el->cdr) {
+		return 1 + enclist_length(el->cdr);
+	} else if (el) {
+		return 1;
+	} else {
+		return 0;
 	}
+}
 		
 
 pthread_t*
 newthread(
-	Enclist *el)
-	{
-		if (el && el->cdr != NULL) {
-			return newthread(el->cdr);
-		} else if (el) {
-			(*el).cdr = (Enclist *)malloc(Enclist_sz);
-			el->cdr->cdr = NULL;
-			return &el->cdr->thread;
-		} else {
-			warnx("%s\n", "newthread() called with null Enclist");
-			return NULL;
-		}
+	enclist_t *el)
+{
+	if (el && el->cdr != NULL) {
+		return newthread(el->cdr);
+	} else if (el) {
+		(*el).cdr = (enclist_t *)malloc(enclist_sz);
+		el->cdr->cdr = NULL;
+		return &el->cdr->thread;
+	} else {
+		warnx("%s\n", "newthread() called with null enclist_t");
+		return NULL;
 	}
+}
 
 
 void
 writeenc(
-	Enclist *el,
+	enclist_t *el,
 	FILE * fd)
-	{
-		void *enc = NULL;
-		pthread_join(el->thread, &enc);
-		if (enc)
-			(void)fprintf(fd, "%s", (char *)enc);
-		free(enc);
-		if (el->cdr)
-			writeenc(el->cdr, fd);
-	}
+{
+	void *enc = NULL;
+	pthread_join(el->thread, &enc);
+	if (enc)
+		(void)fprintf(fd, "%s", (char *)enc);
+	free(enc);
+	if (el->cdr)
+		writeenc(el->cdr, fd);
+}
 
 void*
 freeenc(
-	Enclist *el)
-	{
-		if (el->cdr)
-			el->cdr = freeenc(el->cdr);
-		free(el);
-		return el = NULL;
-	}
+	enclist_t *el)
+{
+	if (el->cdr)
+		el->cdr = freeenc(el->cdr);
+	free(el);
+	return el = NULL;
+}
 
 
 /* start a thread for each line
@@ -360,61 +359,64 @@ uint8_t
 encode(
 	const char * restrict ifile,
 	const char * restrict ofile)
-	{
-		FILE * f_read;
-		FILE * f_write;
-		char *line = NULL;
+{
+	FILE * f_read;
+	FILE * f_write;
+	char *line = NULL;
 
-		if (ifile == NULL)
-			errx(EBADIN, "%s\n", "invalid name for input_file");
-		if (ofile == NULL)
-			errx(EBADOUT, "%s\n", "invalid name for output_file");
-		
+	if (ifile == NULL)
+		f_read = stdin;
+	else
 		f_read = fopen(ifile, "r");
+
+	if (ofile == NULL)
+		f_write = stdout;
+	else
 		f_write = fopen(ofile, "w");
 
-		if (!f_read)
-			errx(EBADIN, "%s\n", "could not open input_file");
-		if (!f_write)
-			errx(EBADOUT, "%s\n", "could not open output_file");
+	if (!f_read)
+		errx(EBADIN, "%s\n", "could not open input_file");
+	if (!f_write)
+		errx(EBADOUT, "%s\n", "could not open output_file");
 
-		header(f_write, DEFAULT_PERM, ifile);
+	header(f_write, DEFAULT_PERM, ifile);
 
-		Enclist *el = (Enclist *)malloc(Enclist_sz);
-		el->cdr = NULL;
-		while (readline(&line, f_read) != EOF)
-		{
-			pthread_create(newthread(el), NULL, &encode_line, (void *)line);
+	enclist_t *el = (enclist_t *)malloc(enclist_sz);
+	el->cdr = NULL;
+	while (readline(&line, f_read) != EOF)
+	{
+		pthread_create(newthread(el), NULL, &encode_line, (void *)line);
 
-			line = NULL;
-		}
-		writeenc(el, f_write);
-		el = freeenc(el);
-
-		//add footer
-		footer(f_write);
-
-		fclose(f_read);
-		fclose(f_write);
-		return 0; //stand-in
+		line = NULL;
 	}
+	writeenc(el, f_write);
+	el = freeenc(el);
+
+	//add footer
+	footer(f_write);
+
+	fclose(f_read);
+	fclose(f_write);
+	return 0; //stand-in
+}
 
 
 uint8_t
 decode(
 	const char * restrict ifile)
-	{
-		kprintf("%s\n", "decode dose nothing as of yet");
-		return 0; //stand-in
-	}
+{
+	kprintf("%s\n", "decode does nothing as of yet");
+	return 0; //stand-in
+}
 
 
-int cat(
+int
+cat(
 	const char *file)
-	{
-		char cmd[80];
-		snprintf(cmd, 79, "cat %s", file);
-		return system(cmd);
-	}
+{
+	char cmd[80];
+	snprintf(cmd, 79, "cat %s", file);
+	return system(cmd);
+}
 
-/* vim: set ts=4 sw=4 noexpandtab: */
+/* vim: set ts=4 sw=4 noexpandtab tw=79: */
