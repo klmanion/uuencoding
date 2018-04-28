@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <pthread.h>
+#include <ctype.h>
 
 //#define _use_kprintf_
 #ifdef _use_kprintf_
@@ -37,7 +38,7 @@
 
 #define LINE_BUF ((size_t)4096)
 
-const char * const opts = "edo:f:ch";
+const char * const opts = ":edo:f:ch";
 const struct option longopts[] = {
 	{ "encode",	no_argument,		NULL,	'e' },
 	{ "decode",	no_argument,		NULL,	'd' },
@@ -49,94 +50,110 @@ const struct option longopts[] = {
 };
 
 void __dead2
-usage(void)
-	{
-		(void)fprintf(stderr, "usage:\n%s\n%s\n", 
-			"`basename` -e -f file_to_encode -o output_file",
-			"`basename` -d -f file_to_decode");
-		exit(EX_USAGE);
-	}
+usage(const char *const basename)
+{
+	fprintf(stderr, "usage:\n"
+		"%s -e -f file_to_encode -o output_file\n"
+		"%s -d -f file_to_decode\n", basename, basename);
+	exit(EX_USAGE);
+}
 
-uint8_t encode(const char * restrict ifile, const char * restrict ofile);
-uint8_t decode(const char * restrict ifile);
-int cat(const char *file);
+uint8_t	encode __P((const char *restrict ifile,const char *restrict ofile));
+uint8_t	decode __P((const char *restrict));
+int		cat __P((const char *));
+
 
 int
 main(
 	int argc,
-	char * const argv[])
-	{
-		extern int optind;
-		extern char *optarg;
-		char flg;
-		uint8_t e_flg, d_flg, c_flg;
-		char *output_file = NULL;
-		char *input_file = NULL;
+	char *const argv[])
+{
+	extern int optind;
+	extern char *optarg;
+	extern int optopt;
+	extern int opterr;
+	char flg;
+	uint8_t e_flg, d_flg, c_flg;
+	char *output_file = NULL;
+	char *input_file = NULL;
+	uint8_t r;
+	const char *const basename = argv[0];
 
-		e_flg = d_flg = c_flg = 0;
+	opterr = 0;
 
-		while ((flg = getopt_long(argc,argv, opts, longopts, NULL)) != -1) {
-			switch (flg) {
-			case 'e':
-				e_flg = 1;
-				break;;
+	e_flg = d_flg = c_flg = 0;
 
-			case 'd':
-				d_flg = 1;
-				break;;
+	while ((flg = getopt_long(argc,argv, opts, longopts, NULL)) != -1) {
+		switch (flg) {
+		case 'e':
+			e_flg = 1;
+			break;;
 
-			case 'o':
-				output_file = optarg;
-				break;;
-			
-			case 'f':
-				input_file = optarg;
-				break;;
+		case 'd':
+			d_flg = 1;
+			break;;
 
-			case 'c':
-				c_flg = 1;
-				break;;
+		case 'o':
+			output_file = optarg;
+			break;;
+		
+		case 'f':
+			input_file = optarg;
+			break;;
 
-			case 'h':
-			case '?':
-				usage();
-			}
+		case 'c':
+			c_flg = 1;
+			break;;
+
+		case 'h':
+			usage(basename);
+		case '?':
+			if (isprint(optopt))
+				warnx("unknown option flag `%c'", (char)optopt);
+		 	else
+				warnx("unknown option code `%#x'", (unsigned)optopt);
+			usage(basename);
+		case ':':
+			warnx("option flag `%c' requires an argument", optopt);
+			usage(basename);
+		default:
+			abort();
 		}
-		if ((e_flg == 1 && d_flg == 1) || (e_flg == 0 && d_flg == 0)) {
-			warnx("%s", "you must specify the e or d option");
-			usage();
-		}
-		uint8_t r;
-		if (e_flg) //-e -f file -o file
-		{
-			if (output_file == NULL && c_flg != 1) {
-				warnx("%s\n", "no output file has been specified");
-				usage();
-			}
-			if (input_file == NULL) {
-				warnx("%s", "no input file has been specified");
-				usage();
-			}
-			r = encode(input_file, output_file);
-			if (c_flg) {
-				cat(output_file);
-			}
-			return r;
-		}		
-		else if (d_flg) //-d -f file
-		{
-			if (input_file == NULL) {
-				warnx("%s", "no input file has been specified");
-				usage();
-			}
-			r = decode(input_file);
-			return r;
-		}
-		return(EXIT_FAILURE);
 	}
+	if ((e_flg == 1 && d_flg == 1) || (e_flg == 0 && d_flg == 0)) {
+		warnx("%s", "you must specify the e or d option");
+		usage(basename);
+	}
+	if (e_flg) //-e -f file -o file
+	{
+		if (output_file == NULL && c_flg != 1) {
+			warnx("%s\n", "no output file has been specified");
+			usage(basename);
+		}
+		if (input_file == NULL) {
+			warnx("%s", "no input file has been specified");
+			usage(basename);
+		}
+		r = encode(input_file, output_file);
+		if (c_flg) {
+			cat(output_file);
+		}
+		return r;
+	}		
+	else if (d_flg) //-d -f file
+	{
+		if (input_file == NULL) {
+			warnx("%s", "no input file has been specified");
+			usage(basename);
+		}
+		r = decode(input_file);
+		return r;
+	}
+	return(EXIT_FAILURE);
+}
 
 
-#define __default_perm__ NULL
+#define __default_perm__ "644"
 #define DEFAULT_PERM __default_perm__
 void
 header(
@@ -144,8 +161,6 @@ header(
 	const char *perm, 		//octal UNIX permissions, usualy 644
 	const char *filename) 	//filename to be written to
 	{
-		if (perm == NULL)
-			perm = "644";
 		fprintf(fd, "begin %s %s\n", perm, filename);
 		return;
 	}
@@ -154,7 +169,7 @@ void
 footer(
 	FILE *fd)
 	{
-		(void)fprintf(fd, "`\nend\n");
+		fprintf(fd, "`\nend\n");
 	}
 
 /* calculates how many bits the array resulting from stobin will have
