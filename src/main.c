@@ -128,7 +128,7 @@ main(
 	if (e_flg) //-e -f file -o file
 	{
 		if (!output_file) { //then stdout will recieve the output
-			c_flg = 0
+			c_flg = 0;
 		}
 		if (!input_file && feof(stdin)) {
 			warnx("%s", "no input has been provided");
