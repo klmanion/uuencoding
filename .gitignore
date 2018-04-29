@@ -1,1 +1,25 @@
+#.gitignore
+*.swp
+.deps
+
+# automake
+Makefile.in
+Makefile
+
+# autoconf
+/aclocal.m4
+/compile
+/config/**
+!/config/install-sh
+/config.*
+/configure
+/configure.in
+/depcomp
+/install-sh
+/missing
+/stamp-h1
+
+# m4
+autom4te.cache
+
 *.out
