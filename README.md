@@ -9,3 +9,6 @@ This is a reimplementation of uuencoding done personally for educational reasons
 The idea for this challenge came from r/dailyprogrammer.
 
 This was actualy quite a fun project to undertake because it was my first multi-threaded program.
+
+## Compilation
+Run ./autogen.sh in your shell, and omit the install step.
