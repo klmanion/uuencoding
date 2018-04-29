@@ -1,0 +1,9 @@
+#src/.gitignore
+
+*.out
+coded.txt
+input.txt
+*.gch
+
+*.[oa]
+uuenc
