@@ -36,7 +36,7 @@
 
 #define LINE_BUF ((size_t)4096)
 
-const char * const opts = ":edo:f:ch";
+const char *const opts = ":edo:f:ch";
 const struct option longopts[] = {
 	{ "encode",	no_argument,		NULL,	'e' },
 	{ "decode",	no_argument,		NULL,	'd' },
@@ -116,6 +116,9 @@ main(
 			abort();;
 		}
 	}
+	argc -= optind;
+	argv += optind;
+
 	if (!(e_flg ^ d_flg)) {
 		warnx("%s", "you must specify the e or d mode");
 		usage(basename);
