@@ -1,15 +1,14 @@
-//decode.h
-//
+/**
+ *decode.h
+ */
 
-#ifndef __DECODE_H__
-#define __DECODE_H__
+#ifndef _DECODE_H_
+#define _DECODE_H_
 
 #include <stdint.h>
 
-__BEGIN_DECLS
-uint8_t	decode __P((const char *restrict));
-__END_DECLS
+uint8_t	decode (const char *const restrict,const char *const restrict);
 
-#endif /* !__DECODE_H__ */
+#endif /* !_DECODE_H_ */
 
-/* vim: set ts=4 sw=4 noexpandtab tw=79: */
+/* vi: set ts=8 sw=8 noexpandtab tw=79: */

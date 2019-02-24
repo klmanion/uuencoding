@@ -1,20 +1,19 @@
-//main.c
-//created by: Kurt L. Manion
-//on: 16 Aug 2016
-//problem from: «https://www.reddit.com/r/dailyprogrammer/comments/4xy6i1/20160816_challenge_279_easy_uuencoding/»
-//
-//uuencoding/uudecoding
+/**
+ *main.c
+ * created by: Kurt L. Manion
+ * on: 16 Aug 2016
+ * modified: 22 Feburary 2019
+ * uuencoding/uudecoding
+ *
+ * example encoded file that reads "cat":
+ *	begin 644 cat.txt
+ *	#0V%T
+ *	`
+ *	end
+ */
 
-//example encoded file that reads "cat"
-/*
-  begin 644 cat.txt
-  #0V%T
-  `
-  end
-*/
-
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <sysexits.h>
 #include <string.h>
 #include <err.h>
@@ -25,16 +24,6 @@
 
 #include "encode.h"
 #include "decode.h"
-#include "cat.h"
-
-//#define _use_kprintf_
-#ifdef _use_kprintf_
-#define kprintf(...) do{ (void)fprintf(stderr, __VA_ARGS__); }while(0)
-#else
-#define kprintf(...) /* NULL */
-#endif /* _use_kprintf_ */
-
-#define LINE_BUF ((size_t)4096)
 
 const char *const opts = ":edo:f:ch";
 const struct option longopts[] = {
@@ -48,18 +37,21 @@ const struct option longopts[] = {
 };
 
 void __dead2
-usage(const char *const basename)
+usage(void)
 {
+	const char *const basename = getprogname();
+
 	fprintf(stderr, "usage:\n"
-		"%s -e -f file_to_encode -o output_file\n"
-		"%s -d -f file_to_decode\n", basename, basename);
+		"%s -e -f file_to_encode [-o output_file]\n"
+		"%s -d -f file_to_decode [-o output_file]\n",
+		basename, basename);
 	exit(EX_USAGE);
 }
 
 int
 main(
-	int argc,
-	char *const argv[])
+    int argc,
+    char *const argv[])
 {
 	extern int optind;
 	extern char *optarg;
@@ -67,16 +59,17 @@ main(
 	extern int opterr;
 	char flg;
 	uint8_t e_flg, d_flg, c_flg;
-	char *output_file = NULL;
-	char *input_file = NULL;
-	uint8_t r;
-	const char *const basename = argv[0];
+	char *input_file = NULL, *output_file = NULL;
+	char com[80];
 
 	opterr = 0;
 
+	setprogname(argv[0]);
+
 	e_flg = d_flg = c_flg = 0;
 
-	while ((flg = getopt_long(argc,argv, opts, longopts, NULL)) != -1) {
+	while ((flg = getopt_long(argc,argv, opts, longopts, NULL)) != -1)
+	    {
 		switch (flg) {
 		case 'e':
 			e_flg = 1;
@@ -89,7 +82,7 @@ main(
 		case 'o':
 			output_file = optarg;
 			break;;
-		
+
 		case 'f':
 			input_file = optarg;
 			break;;
@@ -99,54 +92,48 @@ main(
 			break;;
 
 		case 'h':
-			usage(basename);;
+			usage();;
 
 		case '?':
 			if (isprint(optopt))
-				warnx("unknown option flag `%c'", (char)optopt);
-		 	else
-				warnx("unknown option code `%#x'", optopt);
-			usage(basename);;
+			    warnx("unknown option flag `%c'", (char)optopt);
+			else
+			    warnx("unknown option code `%#x'", (unsigned)optopt);
+			usage();;
 
 		case ':':
 			warnx("option flag `%c' requires an argument", (char)optopt);
-			usage(basename);;
+			usage();;
 
 		default:
 			abort();;
 		}
-	}
+	    }
 	argc -= optind;
 	argv += optind;
 
-	if (!(e_flg ^ d_flg)) {
-		warnx("%s", "you must specify the e or d mode");
-		usage(basename);
-	}
-	if (e_flg) //-e -f file -o file
-	{
-		if (!output_file) { //then stdout will recieve the output
-			c_flg = 0;
-		}
-		if (!input_file && feof(stdin)) {
-			warnx("%s", "no input has been provided");
-			usage(basename);
-		}
-		r = encode(input_file, output_file);
-		if (c_flg)
-			cat(output_file);
-		return r;
-	}		
-	else if (d_flg) //-d -f file
-	{
-		if (!input_file) {
-			warnx("%s", "no input file has been specified");
-			usage(basename);
-		}
-		r = decode(input_file);
-		return r;
-	}
-	return EXIT_FAILURE;
+	if (!(e_flg ^ d_flg))
+	    warnx("you must specify either the e or d mode"), usage();
+
+	if (!input_file && feof(stdin))
+	    warnx("no input has been provided"), usage();
+
+	if (e_flg) /* -e -f file -o file */
+	    {
+		encode(input_file, output_file);
+	    }		
+	else if (d_flg) /* -d -f file */
+	    {
+		decode(input_file, output_file);
+	    }
+
+	if (c_flg && output_file)
+	    {
+		snprintf(com, 79, "cat %s", output_file);
+		system(com);
+	    }
+
+	return EXIT_SUCCESS;
 }
 
-/* vim: set ts=4 sw=4 noexpandtab tw=79: */
+/* vi: set ts=8 sw=8 noexpandtab tw=79: */

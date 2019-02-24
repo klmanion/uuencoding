@@ -1,10 +1,10 @@
 //bitconv.c
 //
 
+#include "bitconv.h"
+
 #include <stdio.h>
 #include <string.h>
-
-#include "bitconv.h"
 
 /* calculates how many bits the array resulting from stobin will have
  * makeing sure that it has padding bits to make it a multiple of 6 */
@@ -58,14 +58,12 @@ stobin(
 	return acc;
 }
 
-/*
- * reads at least 45 characters from the file
+/* reads at least 45 characters from the file
  * seeking forward
- * !!! this dose not capture the newline
+ * !!! this does not capture the newline
  * returns EOF on EOF
- * returns 0 otherwise
- */
-int
+ * returns 0 otherwise */
+int __attribute__((unused))
 readline(
 	char **line,
 	FILE *fd)

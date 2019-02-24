@@ -1,53 +1,39 @@
-//encode.c
-//
-
-#include <stdio.h>
-#include <err.h>
-#include <string.h>
+/**
+ *encode.c
+ * source for encoding routine
+ */
 
 #include "encode.h"
+
+#include <stdio.h>
+#include <string.h>
+#include <limits.h>
+#include <err.h>
 #include "bitconv.h"
 #include "enclist.h"
-
-void
-header(
-	FILE * fd, 				//output file written to in encode funct
-	const char *perm, 		//octal UNIX permissions, usualy 644
-	const char *filename) 	//filename to be written to
-{
-	fprintf(fd, "begin %s %s\n", perm, filename);
-}
-
-void
-footer(
-	FILE *fd)
-{
-	fprintf(fd, "`\nend\n");
-}
 
 /* power-house function that actualy converts text to binary 
  * this is now the thread function
  * --> dose sprintf require the void ?
- * return value needs to be freed
- */
-void*
+ * return value needs to be freed */
+static	void*
 encode_line(
-	void *arg)
+    void *arg)
 {
 	char *line = (char *)arg;
 	uint8_t *bin;
-	//the 45->60 chars and the length newline and null
+	//the 45..60 chars and the length newline and null
 	char *enc = (char *)malloc(63*sizeof(char));
-	
+
 	//encode the number of characters
 	sprintf(enc, "%c", (int)(strlen(line)+32));
 
 	//convert the string of chars into an array of bits
 	bin = stobin(line);//must be freed
 	for(size_t i=0,len=stobin_size(line); i<len; i+=6)
-	{
+	    {
 		sprintf(enc, "%s%c", enc, bitstoc(&bin[i]) + 32);
-	}
+	    }
 	sprintf(enc, "%s\n", enc);
 	free(bin);
 	return (void *)enc;
@@ -59,53 +45,61 @@ encode_line(
  * then join them, writting their return value to f_write
  * change the encode_line funct to only return an encoded version
  * of line (having no aftereffects, since it no longer writes to the file
- * itself
- */
+ * itself */
 uint8_t
 encode(
-	const char *restrict ifile,
-	const char *restrict ofile)
+    const char *const restrict f_read_name,
+    const char *const restrict f_write_name)
 {
 	FILE * f_read;
 	FILE * f_write;
+	enclist_t *el;
 	char *line = NULL;
 
-	if (ifile == NULL) {
-		ifile = "stdin";
-		f_read = stdin;
-	} else {
-		f_read = fopen(ifile, "r");
-	}
-
-	if (ofile == NULL)
-		f_write = stdout;
-	else
-		f_write = fopen(ofile, "w");
+	f_read = f_read_name? fopen(f_read_name, "r") : stdin;
+	f_write = f_write_name? fopen(f_write_name, "w") : stdout;
 
 	if (!f_read)
-		errx(EBADIN, "%s\n", "could not open input_file");
+	    errx(EBADIN, "could not open input_file");
 	if (!f_write)
-		errx(EBADOUT, "%s\n", "could not open output_file");
+	    errx(EBADOUT, "could not open output_file");
 
-	header(f_write, DEFAULT_PERM, ifile); 
+	el = (enclist_t *)malloc(enclist_sz);
+	if (!el)
+	    errx(1,"malloc failure, %s:%d", __FILE__, __LINE__);
 
-	enclist_t *el = (enclist_t *)malloc(enclist_sz);
 	el->cdr = NULL;
-	while (readline(&line, f_read) != EOF)
-	{
-		pthread_create(newthread(el), NULL, &encode_line, (void *)line);
 
-		free(line);
-	}
+	/* header */
+	fprintf(f_write, "begin %s %s\n", DEFAULT_PERM, f_read_name);
+
+	/* body */
+	while (!feof(f_read))
+	    {
+		line = (char *)malloc(47 * CHAR_BIT);
+		if (!line)
+		    errx(1,"malloc failure, %s:%d", __FILE__, __LINE__);
+
+		if (fgets(line, 47, f_read))
+		    {
+			pthread_create(newthread(el), NULL,
+				       encode_line, (void *)line);
+		    }
+		else
+		    {
+			free(line); line = (char *)NULL;
+		    }
+	    }
 	writeenc(el, f_write);
 	el = freeenc(el);
 
-	//add footer
-	footer(f_write);
+	/* footer */
+	fprintf(f_write, "`\nend\n");
 
 	fclose(f_read);
 	fclose(f_write);
-	return 0; //stand-in
+
+	return 0;
 }
 
-/* vim: set ts=4 sw=4 noexpandtab tw=79: */
+/* vi: set ts=8 sw=8 noexpandtab tw=79: */

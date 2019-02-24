@@ -37,7 +37,6 @@ newthread(
 	}
 }
 
-
 void
 writeenc(
 	enclist_t *el,
@@ -62,4 +61,4 @@ freeenc(
 	return el = NULL;
 }
 
-/* vim: set ts=4 sw=4 noexpandtab tw=79: */
+/* vi: set ts=4 sw=4 noexpandtab tw=79: */

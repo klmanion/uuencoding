@@ -1,8 +1,8 @@
 //encode.h
 //
 
-#ifndef __ENCODE_H__
-#define __ENCODE_H__
+#ifndef _ENCODE_H_
+#define _ENCODE_H_
 
 #include <stdlib.h>
 
@@ -12,10 +12,8 @@
 #define EBADIN 79
 #define EBADOUT 80
 
-__BEGIN_DECLS
-uint8_t	encode __P((const char *restrict,const char *restrict));
-__END_DECLS
+uint8_t	encode (const char *const restrict,const char *const restrict);
 
-#endif /* !__ENCODE_H__ */
+#endif /* !_ENCODE_H_ */
 
-/* vim: set ts=4 sw=4 noexpandtab tw=79: */
+/* vi: set ts=8 sw=8 noexpandtab tw=79: */
