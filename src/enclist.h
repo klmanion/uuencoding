@@ -6,6 +6,7 @@
 #define _ENCLIST_H_
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <pthread.h>
 
 /**
@@ -13,16 +14,14 @@
  */
 typedef
 struct _enclist {
-	pthread_t		 thread;
+	pthread_t	 thread;
 	struct _enclist	*cdr;
 } enclist_t;
-#define enclist_sz (sizeof(enclist_t))
+#define enclist_sz sizeof(enclist_t)
 
-__BEGIN_DECLS
-pthread_t*	newthread __P((enclist_t *));
-void		writeenc __P((enclist_t *,FILE *));
-void*		freeenc __P((enclist_t *));
-__END_DECLS
+pthread_t*	enclist_newthread (enclist_t *);
+void		enclist_write (enclist_t *,FILE *);
+void*		enclist_free (enclist_t *);
 
 #endif /* !_ENCLIST_H_ */
 

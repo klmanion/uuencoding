@@ -53,8 +53,8 @@ encode(
 {
 	FILE * f_read;
 	FILE * f_write;
-	enclist_t *el;
 	char *line = NULL;
+	enclist_t *el;
 
 	f_read = f_read_name? fopen(f_read_name, "r") : stdin;
 	f_write = f_write_name? fopen(f_write_name, "w") : stdout;
@@ -82,7 +82,7 @@ encode(
 
 		if (fgets(line, 47, f_read))
 		    {
-			pthread_create(newthread(el), NULL,
+			pthread_create(enclist_newthread(el), NULL,
 				       encode_line, (void *)line);
 		    }
 		else
@@ -90,8 +90,8 @@ encode(
 			free(line); line = (char *)NULL;
 		    }
 	    }
-	writeenc(el, f_write);
-	el = freeenc(el);
+	enclist_write(el, f_write);
+	el = enclist_free(el);
 
 	/* footer */
 	fprintf(f_write, "`\nend\n");

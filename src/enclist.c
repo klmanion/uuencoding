@@ -1,15 +1,15 @@
-//enclist.c
-//
-
-#include <stdio.h>
-#include <err.h>
+/**
+ *enclist.c
+ */
 
 #include "enclist.h"
+
+#include <err.h>
 
 /* debugging purposes only */
 int __attribute__((unused))
 enclist_length(
-	enclist_t *el)
+    enclist_t *el)
 {
 	if (el && el->cdr) {
 		return 1 + enclist_length(el->cdr);
@@ -19,46 +19,62 @@ enclist_length(
 		return 0;
 	}
 }
-		
 
 pthread_t*
-newthread(
-	enclist_t *el)
+enclist_newthread(
+    enclist_t *const el)
 {
-	if (el && el->cdr != NULL) {
-		return newthread(el->cdr);
-	} else if (el) {
+	if (!el)
+	    {
+		return (pthread_t *)NULL;
+	    }
+	else if (el->cdr)
+	    {
+		return enclist_newthread(el->cdr);
+	    }
+	else
+	    {
 		(*el).cdr = (enclist_t *)malloc(enclist_sz);
-		el->cdr->cdr = NULL;
+		el->cdr->cdr = (enclist_t *)NULL;
 		return &el->cdr->thread;
-	} else {
-		warnx("%s\n", "newthread() called with null enclist_t");
-		return NULL;
-	}
+	    }
 }
 
 void
-writeenc(
-	enclist_t *el,
-	FILE * fd)
+enclist_write(
+    enclist_t *el,
+    FILE * fd)
 {
 	void *enc = NULL;
-	pthread_join(el->thread, &enc);
-	if (enc)
-		fprintf(fd, "%s", (char *)enc);
-	free(enc);
-	if (el->cdr)
-		writeenc(el->cdr, fd);
+
+	if (el)
+	    {
+		pthread_join(el->thread, &enc);
+
+		if (enc)
+		    {
+			fprintf(fd, "%s", (char *)enc);
+			free(enc);
+		    }
+
+		if (el->cdr)
+		    enclist_write(el->cdr, fd);
+	    }
 }
 
 void*
-freeenc(
-	enclist_t *el)
+enclist_free(
+    enclist_t *el)
 {
-	if (el->cdr)
-		el->cdr = freeenc(el->cdr);
-	free(el);
+	if (el)
+	    {
+		if (el->cdr)
+		    enclist_free(el->cdr);
+
+		free(el);
+	    }
+
 	return el = NULL;
 }
 
-/* vi: set ts=4 sw=4 noexpandtab tw=79: */
+/* vi: set ts=8 sw=8 noexpandtab tw=79: */
