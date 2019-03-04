@@ -12,16 +12,13 @@
 /**
  * linked-list structure to dynamically hold encoded lines
  */
-typedef
-struct _enclist {
-	pthread_t	 thread;
-	struct _enclist	*cdr;
-} enclist_t;
-#define enclist_sz sizeof(enclist_t)
+typedef struct _enclist enclist_t;
 
-pthread_t*	enclist_newthread (enclist_t *);
-void		enclist_write (enclist_t *,FILE *);
-void*		enclist_free (enclist_t *);
+enclist_t*	enclist_init (enclist_t **);
+enclist_t*	enclist_free (enclist_t *);
+
+pthread_t*	enclist_newthread (enclist_t *const);
+void		enclist_write (const enclist_t *const,FILE *);
 
 #endif /* !_ENCLIST_H_ */
 

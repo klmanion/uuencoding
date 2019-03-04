@@ -1,4 +1,4 @@
 ## src/Makefile.am
 
 bin_PROGRAMS = uuenc
-uuenc_SOURCES = main.c encode.c decode.c enclist.c bitconv.c
+uuenc_SOURCES = main.c conv.c enclist.c

@@ -5,25 +5,31 @@
  * modified: 22 Feburary 2019
  * uuencoding/uudecoding
  *
- * example encoded file that reads "cat":
+ * example encoded file that reads "Cat":
  *	begin 644 cat.txt
  *	#0V%T
  *	`
  *	end
  */
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif /* HAVE_CONFIG_H */
+
+#ifndef DEBUG
+# define NDEBUG
+#endif /* DEBUG */
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <sysexits.h>
-#include <string.h>
-#include <err.h>
-#include <getopt.h>
 #include <stdint.h>
-#include <sys/types.h>
+#include <string.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sysexits.h>
+#include <getopt.h>
+#include <err.h>
 
-#include "encode.h"
-#include "decode.h"
+#include "conv.h"
 
 const char *const opts = ":edo:f:ch";
 const struct option longopts[] = {
@@ -48,6 +54,10 @@ usage(void)
 	exit(EX_USAGE);
 }
 
+	uint8_t	e_flg;
+	uint8_t	d_flg;
+static	uint8_t	c_flg;
+
 int
 main(
     int argc,
@@ -58,8 +68,7 @@ main(
 	extern int optopt;
 	extern int opterr;
 	char flg;
-	uint8_t e_flg, d_flg, c_flg;
-	char *input_file = NULL, *output_file = NULL;
+	char *f_read_name = NULL, *f_write_name = NULL;
 	char com[80];
 
 	opterr = 0;
@@ -80,11 +89,11 @@ main(
 			break;;
 
 		case 'o':
-			output_file = optarg;
+			f_write_name = optarg;
 			break;;
 
 		case 'f':
-			input_file = optarg;
+			f_read_name = optarg;
 			break;;
 
 		case 'c':
@@ -115,21 +124,14 @@ main(
 	if (!(e_flg ^ d_flg))
 	    warnx("you must specify either the e or d mode"), usage();
 
-	if (!input_file && feof(stdin))
+	if (!f_read_name && feof(stdin))
 	    warnx("no input has been provided"), usage();
 
-	if (e_flg) /* -e -f file -o file */
-	    {
-		encode(input_file, output_file);
-	    }		
-	else if (d_flg) /* -d -f file */
-	    {
-		decode(input_file, output_file);
-	    }
+	conv(f_read_name, f_write_name);
 
-	if (c_flg && output_file)
+	if (c_flg && f_write_name)
 	    {
-		snprintf(com, 79, "cat %s", output_file);
+		snprintf(com, 79, "cat %s", f_write_name);
 		system(com);
 	    }
 
